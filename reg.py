@@ -66,11 +66,9 @@ def create_lineedits():
     return line_edits
 
 
-def create_submit_button():
-    return PyQt5.QtWidgets.QPushButton("Submit")
 
 
-def create_control_frame(labels, line_edits, submit):
+def create_control_frame(labels, line_edits):
     grid_layout = PyQt5.QtWidgets.QGridLayout()
     grid_layout.setSpacing(7)
     grid_layout.setContentsMargins(7, 7, 7, 7)
@@ -80,12 +78,10 @@ def create_control_frame(labels, line_edits, submit):
     grid_layout.setRowStretch(3, 0)
     grid_layout.setColumnStretch(0, 0)
     grid_layout.setColumnStretch(1, 1)
-    grid_layout.setColumnStretch(2, 0)
     for i, label in enumerate(labels):
         grid_layout.addWidget(label, i, 0)
     for i, line_edit in enumerate(line_edits):
         grid_layout.addWidget(line_edit, i, 1)
-    grid_layout.addWidget(submit, 0, 2, 4, 2)
     control_frame = PyQt5.QtWidgets.QFrame()
     control_frame.setLayout(grid_layout)
 
@@ -148,8 +144,7 @@ def show_user_interface():
     listwidget = create_listwidget()
     labels = create_labels()
     line_edits = create_lineedits()
-    submit = create_submit_button()
-    control_frame = create_control_frame(labels, line_edits, submit)
+    control_frame = create_control_frame(labels, line_edits)
     data_frame = create_data_frame(listwidget)
     central_frame = create_central_frame(data_frame, control_frame)
     window = create_window(central_frame)
@@ -191,8 +186,6 @@ def show_user_interface():
 
     # perform for initial populating of app
     clear_and_update_list()
-
-    submit.clicked.connect(clear_and_update_list)
 
     # when enter is pressed, update the display
     for line_edit in line_edits:

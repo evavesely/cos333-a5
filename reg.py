@@ -1,4 +1,6 @@
-# tyler benson and eva vesely 06/09/2020
+# tyler benson and eva vesely 11/30/2022
+import threading
+
 import argparse
 import sys
 import socket
@@ -66,8 +68,6 @@ def create_lineedits():
     return line_edits
 
 
-
-
 def create_control_frame(labels, line_edits):
     grid_layout = PyQt5.QtWidgets.QGridLayout()
     grid_layout.setSpacing(7)
@@ -132,10 +132,42 @@ def format_list_data(list_data):
     ret = [None]*len(list_data)
     for i, row in enumerate(list_data):
         ret[i] = (
-            row[0], f"{row[0]:>5} "\
-                        f"{row[1]:>4} {row[2]:>6} "\
-                           f"{row[3]:>4} {row[4]:<59}")
+            row[0], f"{row[0]:>5} "
+            f"{row[1]:>4} {row[2]:>6} "
+            f"{row[3]:>4} {row[4]:<59}")
     return ret
+
+
+def clear_and_update_list(listwidget, line_edits, window):
+    course_data = [line_edits[0].text(), line_edits[1].text(),
+                   line_edits[2].text(), line_edits[3].text()]
+    try:
+        new_data = get_data(
+            "get_overviews", generate_args(course_data))
+        list_data = format_list_data(new_data)
+        listwidget.clear()
+        for row in list_data:
+            listwidget.addItem(MyItem(row[0], row[1], ''))
+    except Exception as ex:
+        if ex is None:
+            ex = "classid does not exist"
+        elif type(ex) is type(ConnectionError):
+            ex = "A server error occurred. " +\
+                "Please contact the system administrator."
+        PyQt5.QtWidgets.QMessageBox.information(
+            window, "Error", str(ex))
+
+
+class Worker(threading.Thread):
+    def __init__(self, listwidget, line_edits, window):
+        threading.Thread.__init__(self)
+        self._listwidget = listwidget
+        self._line_edits = line_edits
+        self._window = window
+
+    def run(self):
+        clear_and_update_list(self._listwidget,
+                              self._line_edits, self._window)
 
 
 def show_user_interface():
@@ -164,32 +196,21 @@ def show_user_interface():
             window, "Class Details", hidden_message)
 
     listwidget.itemActivated.connect(item_slot)
-    # if user hits enter or submits button
-    def clear_and_update_list():
-        listwidget.clear()
-        course_data = [line_edits[0].text(), line_edits[1].text(),
-                    line_edits[2].text(), line_edits[3].text()]
-        try:
-            new_data = get_data(
-                "get_overviews", generate_args(course_data))
-            list_data = format_list_data(new_data)
-            for row in list_data:
-                listwidget.addItem(MyItem(row[0], row[1], ''))
-        except Exception as ex:
-            if ex is None:
-                ex = "classid does not exist"
-            elif type(ex) is type(ConnectionError):
-                ex = "A server error occurred. " +\
-                    "Please contact the system administrator."
-            PyQt5.QtWidgets.QMessageBox.information(
-                window, "Error", str(ex))
+
+    def start_worker_for_query():
+        thread = Worker(listwidget, line_edits, window)
+        thread.start()
 
     # perform for initial populating of app
-    clear_and_update_list()
+    start_worker_for_query()
 
-    # when enter is pressed, update the display
+    # whenever the text changes, update the query... makes sense to me
+    def key_press_event(_):
+        start_worker_for_query()
+
+
     for line_edit in line_edits:
-        line_edit.returnPressed.connect(clear_and_update_list)
+        line_edit.textChanged.connect(key_press_event)
 
     sys.exit(app.exec_())
 
@@ -248,7 +269,6 @@ if __name__ == "__main__":
             if not status:
                 raise Exception(data)
             return data
-
 
     # format and print the data
     show_user_interface()

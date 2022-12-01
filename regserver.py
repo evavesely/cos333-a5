@@ -58,17 +58,17 @@ def handle_client(sock, delay):
         out_flo.flush()
         sock.close()
         print('Closed socket in child process')
-        print('Exiting child process: ' + query)
     except Exception as ex:
         out_flo = sock.makefile(mode='wb')
         pickle.dump((False, ex), out_flo)
         out_flo.flush()
         print(f"{ex}")
+    print('Exiting child process')
+    
 
 
 def main():
     port, delay = parse_args()
-    print('CPU count:’, multiprocessing.cpu_count()')
 
     try:
         port = int(port)

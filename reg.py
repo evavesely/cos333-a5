@@ -1,4 +1,5 @@
 # tyler benson and eva vesely 11/30/2022
+from dataclasses import dataclass
 import threading
 
 import argparse
@@ -8,6 +9,7 @@ import pickle
 import PyQt5.QtWidgets
 import PyQt5.QtCore
 import PyQt5.QtGui
+import queue as queuemod
 
 
 class MyItem(PyQt5.QtWidgets.QListWidgetItem):
@@ -138,36 +140,50 @@ def format_list_data(list_data):
     return ret
 
 
-def clear_and_update_list(listwidget, line_edits, window):
-    course_data = [line_edits[0].text(), line_edits[1].text(),
-                   line_edits[2].text(), line_edits[3].text()]
-    try:
-        new_data = get_data(
-            "get_overviews", generate_args(course_data))
-        list_data = format_list_data(new_data)
+def queue_helper(queue, listwidget, window):
+    while True:
+        try:
+            item = queue.get(block=False)
+        except queuemod.Empty:
+            break
         listwidget.clear()
-        for row in list_data:
-            listwidget.addItem(MyItem(row[0], row[1], ''))
-    except Exception as ex:
-        if ex is None:
-            ex = "classid does not exist"
-        elif type(ex) is type(ConnectionError):
-            ex = "A server error occurred. " +\
-                "Please contact the system administrator."
-        PyQt5.QtWidgets.QMessageBox.information(
-            window, "Error", str(ex))
+        successful, list_data = item
+        if successful:
+            for row in list_data:
+                listwidget.addItem(MyItem(row[0], row[1], ''))
+        else:
+            ex = list_data
+            PyQt5.QtWidgets.QMessageBox.information(
+                window, "Error", str(ex))
 
 
 class Worker(threading.Thread):
-    def __init__(self, listwidget, line_edits, window):
+    def __init__(self, line_edits, queue):
         threading.Thread.__init__(self)
-        self._listwidget = listwidget
         self._line_edits = line_edits
-        self._window = window
+        self._queue = queue
+        self._should_stop = False
+
+    def stop(self):
+        self._should_stop = True
 
     def run(self):
-        clear_and_update_list(self._listwidget,
-                              self._line_edits, self._window)
+        course_data = [self._line_edits[0].text(), self._line_edits[1].text(),
+                       self._line_edits[2].text(), self._line_edits[3].text()]
+        try:
+            new_data = get_data(
+                "get_overviews", generate_args(course_data))
+            list_data = format_list_data(new_data)
+            if not self._should_stop:
+                self._queue.put((True, list_data))
+        except Exception as ex:
+            if ex is None:
+                ex = "classid does not exist"
+            elif type(ex) is type(ConnectionError):
+                ex = "A server error occurred. " +\
+                    "Please contact the system administrator."
+            if not self._should_stop:
+                self._queue.put((False, ex))
 
 
 def show_user_interface():
@@ -197,20 +213,31 @@ def show_user_interface():
 
     listwidget.itemActivated.connect(item_slot)
 
-    def start_worker_for_query():
-        thread = Worker(listwidget, line_edits, window)
-        thread.start()
+    # create a queue and a timer that polls it
+    queue = queuemod.Queue()
 
-    # perform for initial populating of app
-    start_worker_for_query()
+    def poll_queue():
+        queue_helper(queue, listwidget, window)
+    timer = PyQt5.QtCore.QTimer()
+    timer.timeout.connect(poll_queue)
+    timer.setInterval(100)  # milliseconds
+    timer.start()
 
-    # whenever the text changes, update the query... makes sense to me
+    # whenever the text changes, update the query...
+
+    thread = None
     def key_press_event(_):
-        start_worker_for_query()
-
+        nonlocal thread
+        if thread is not None:
+            thread.stop()
+        thread = Worker(line_edits, queue)
+        thread.start()
 
     for line_edit in line_edits:
         line_edit.textChanged.connect(key_press_event)
+
+    # perform for initial populating of app
+    key_press_event("")
 
     sys.exit(app.exec_())
 

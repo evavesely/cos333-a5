@@ -1,6 +1,6 @@
 # tyler benson and eva vesely 11/30/2022
-from dataclasses import dataclass
 import threading
+import queue as queuemod
 
 import argparse
 import sys
@@ -9,7 +9,6 @@ import pickle
 import PyQt5.QtWidgets
 import PyQt5.QtCore
 import PyQt5.QtGui
-import queue as queuemod
 
 
 class MyItem(PyQt5.QtWidgets.QListWidgetItem):
@@ -168,8 +167,10 @@ class Worker(threading.Thread):
         self._should_stop = True
 
     def run(self):
-        course_data = [self._line_edits[0].text(), self._line_edits[1].text(),
-                       self._line_edits[2].text(), self._line_edits[3].text()]
+        course_data = [self._line_edits[0].text(),
+                       self._line_edits[1].text(),
+                       self._line_edits[2].text(),
+                       self._line_edits[3].text()]
         try:
             new_data = get_data(
                 "get_overviews", generate_args(course_data))
@@ -226,6 +227,7 @@ def show_user_interface():
     # whenever the text changes, update the query...
 
     thread = None
+
     def key_press_event(_):
         nonlocal thread
         if thread is not None:

@@ -19,7 +19,7 @@ def parse_args():
         help="the port at which the server should listen")
     parser.add_argument(
         "delay", metavar="delay", type=int,
-        help="delay for busy wait") 
+        help="delay for busy wait")
 
     args = parser.parse_args()
 
@@ -64,7 +64,6 @@ def handle_client(sock, delay):
         out_flo.flush()
         print(f"{ex}")
     print('Exiting child process')
-    
 
 
 def main():
@@ -88,7 +87,9 @@ def main():
                 with sock:
                     print('Accepted connection, opened socket.socket')
                     print("Opened socket")
-                    process = multiprocessing.Process(target=handle_client, args=[sock,delay])
+                    process = multiprocessing.Process(
+                        target=handle_client,
+                        args=[sock,delay])
                     process.start()
             except Exception as ex:
                 print(ex, file=sys.stderr)

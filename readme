@@ -1,0 +1,12 @@
+evesely_tb19
+Assignment 5
+
+Eva programmed steps 1-3 in the assignment while Tyler gave suggestions. We first added artificial delays to regserver.py and tested it by sending  multiple queries from reg.py. We then designed regserver.py so it used multiple processors and forked a child processor to handle each client query. We tested the intended functionality by ensuring that each query from reg.py processed in the same amount of time (specified by the delay). 
+
+Tyler programmed steps 4-6 in the assignment while Eva gave suggestions. We first deleted the submit button and instead sent a query from reg.py each time there was a new keystroke. We then tested this single thread functionality by increasing the delay and seeing how it affected the GUI. Finally, we modified reg.py so that a new worker thread which queries the database is spawned with each keystroke. After testing the app, we saw that the GUI was no longer laggy. 
+
+We used the examples from the multiple processors/ threads lectures in completing this assignment. 
+
+This assignment took us about 3 hours. 
+
+This assignment was helpful for learning the practical applications of multiple processors/ threads. 

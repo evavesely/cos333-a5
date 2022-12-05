@@ -19,7 +19,7 @@ def parse_args():
         help="the port at which the server should listen")
     parser.add_argument(
         "delay", metavar="delay", type=int,
-        help="delay for busy wait") #change to exact message in ref program
+        help="delay for busy wait") 
 
     args = parser.parse_args()
 
